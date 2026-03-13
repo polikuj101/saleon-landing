@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saleon — ИИ-агент продаж</title>
+  <meta name="description" content="ИИ-агент, который квалифицирует, отрабатывает возражения и закрывает сделки — пока вы спите." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #0a0a0a;
+      --gray1:   #1a1a1a;
+      --gray4:   #444;
+      --gray6:   #666;
+      --gray9:   #999;
+      --grayb:   #bbb;
+      --grayе:   #ebebeb;
+      --grayo:   #f5f5f5;
+      --white:   #ffffff;
+      --accent:  #2563eb;
+      --accent2: #1d4ed8;
+      --radius:  12px;
+      --shadow:  0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--white);
+      color: var(--black);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 96px 0; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 24px; border-radius: 8px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      border: none; transition: all .18s;
+    }
+    .btn-primary { background: var(--black); color: var(--white); }
+    .btn-primary:hover { background: var(--gray1); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+    .btn-ghost {
+      background: transparent; color: var(--black);
+      border: 1.5px solid var(--grayе);
+    }
+    .btn-ghost:hover { border-color: var(--grayb); background: var(--grayo); }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--grayе);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: -.4px; }
+    .logo span { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 14px; color: var(--gray4); transition: color .15s; }
+    .nav-links a:hover { color: var(--black); }
+    .nav-cta { display: flex; gap: 10px; }
+
+    /* ── Hero ── */
+    #hero {
+      padding: 112px 0 80px;
+      background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: #eff6ff; color: var(--accent);
+      font-size: 12px; font-weight: 600; letter-spacing: .06em;
+      padding: 5px 14px; border-radius: 99px;
+      margin-bottom: 24px; text-transform: uppercase;
+      border: 1px solid #dbeafe;
+    }
+    .hero-title {
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 800; letter-spacing: -.03em;
+      line-height: 1.1; max-width: 760px; margin: 0 auto 20px;
+    }
+    .hero-title em { font-style: normal; color: var(--accent); }
+    .hero-sub {
+      font-size: 18px; color: var(--gray4);
+      max-width: 560px; margin: 0 auto 40px; line-height: 1.65;
+    }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .hero-note { margin-top: 14px; font-size: 13px; color: var(--gray9); }
+
+    /* ── Logos ── */
+    #logos { padding: 40px 0; border-bottom: 1px solid var(--grayе); }
+    .logos-label { text-align: center; font-size: 13px; color: var(--gray9); margin-bottom: 20px; letter-spacing: .04em; text-transform: uppercase; }
+    .logos-row { display: flex; gap: 40px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .logos-row span { font-size: 14px; font-weight: 700; color: var(--grayb); letter-spacing: -.02em; }
+
+    /* ── Section headers ── */
+    .section-label { font-size: 12px; font-weight: 600; color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.2; }
+    .section-sub { font-size: 17px; color: var(--gray6); margin-top: 14px; max-width: 540px; line-height: 1.65; }
+
+    /* ── Pain section ── */
+    #pain { background: var(--grayo); }
+    .pain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 56px; }
+    .pain-card {
+      background: var(--white); border-radius: var(--radius);
+      padding: 28px; border: 1px solid var(--grayе);
+      box-shadow: var(--shadow);
+    }
+    .pain-icon { font-size: 28px; margin-bottom: 14px; }
+    .pain-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .pain-card p { font-size: 14px; color: var(--gray6); line-height: 1.6; }
+
+    /* ── How it works ── */
+    #how { text-align: center; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px; margin-top: 64px; position: relative; }
+    .step { position: relative; }
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--black); color: var(--white);
+      font-size: 14px; font-weight: 700; margin: 0 auto 16px;
+    }
+    .step h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--gray6); }
+
+    /* ── Features ── */
+    #features { background: var(--grayo); }
+    .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 56px; }
+    .feat-card {
+      background: var(--white); border-radius: var(--radius);
+      padding: 28px; border: 1px solid var(--grayе);
+      transition: box-shadow .2s, transform .2s;
+    }
+    .feat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .feat-icon { font-size: 24px; margin-bottom: 14px; }
+    .feat-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .feat-card p { font-size: 13.5px; color: var(--gray6); line-height: 1.6; }
+
+    /* ── Demo ── */
+    #demo { background: var(--black); color: var(--white); text-align: center; }
+    #demo .section-label { color: #60a5fa; }
+    #demo .section-title { color: var(--white); }
+    #demo .section-sub { color: var(--grayb); }
+    .demo-box {
+      margin-top: 48px;
+      background: #111; border: 1px solid #222; border-radius: 16px;
+      padding: 40px; max-width: 640px; margin-left: auto; margin-right: auto;
+    }
+    .demo-chat { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; text-align: left; }
+    .bubble {
+      display: inline-block; padding: 12px 16px; border-radius: 12px;
+      font-size: 14px; max-width: 80%; line-height: 1.5;
+    }
+    .bubble-bot { background: #1e1e1e; color: #e5e5e5; border: 1px solid #2a2a2a; align-self: flex-start; }
+    .bubble-user { background: var(--accent); color: #fff; align-self: flex-end; }
+    .demo-btn-wrap { display: flex; justify-content: center; }
+    .btn-demo { background: var(--white); color: var(--black); padding: 14px 28px; font-size: 15px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: all .18s; }
+    .btn-demo:hover { background: #f0f0f0; transform: translateY(-1px); }
+
+    /* ── Pricing ── */
+    #pricing { text-align: center; }
+    .pricing-note { font-size: 14px; color: var(--gray6); margin-top: 10px; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 56px; max-width: 960px; margin-left: auto; margin-right: auto; }
+    .plan {
+      border: 1.5px solid var(--grayе); border-radius: 16px;
+      padding: 32px; text-align: left; position: relative;
+      transition: box-shadow .2s;
+    }
+    .plan:hover { box-shadow: var(--shadow); }
+    .plan.popular {
+      border-color: var(--black);
+      box-shadow: 0 0 0 1px var(--black);
+    }
+    .popular-badge {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--black); color: var(--white);
+      font-size: 11px; font-weight: 700; letter-spacing: .06em;
+      padding: 4px 14px; border-radius: 99px; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .plan-name { font-size: 14px; font-weight: 600; color: var(--gray6); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    .plan-price { font-size: 2.4rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+    .plan-price span { font-size: 1rem; font-weight: 500; color: var(--gray6); }
+    .plan-volume { font-size: 13px; color: var(--gray9); margin-top: 4px; margin-bottom: 20px; }
+    .plan-desc { font-size: 14px; color: var(--gray6); margin-bottom: 24px; line-height: 1.5; }
+    .plan-divider { border: none; border-top: 1px solid var(--grayе); margin-bottom: 24px; }
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+    .plan-features li { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; }
+    .plan-features li::before { content: "✓"; color: #16a34a; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .plan-features li.dim { color: var(--gray9); }
+    .plan-features li.dim::before { content: "—"; color: var(--grayb); }
+    .plan-btn { width: 100%; }
+    .plan-setup { text-align: center; font-size: 12px; color: var(--gray9); margin-top: 12px; }
+
+    /* ── CTA final ── */
+    #cta {
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      color: var(--white); text-align: center;
+    }
+    #cta .section-title { color: var(--white); }
+    #cta .section-sub { color: var(--grayb); margin: 0 auto; }
+    .cta-btns { display: flex; gap: 12px; justify-content: center; margin-top: 36px; flex-wrap: wrap; }
+    .btn-white { background: var(--white); color: var(--black); }
+    .btn-white:hover { background: #f0f0f0; transform: translateY(-1px); }
+    .btn-outline-white { background: transparent; color: var(--white); border: 1.5px solid rgba(255,255,255,.25); }
+    .btn-outline-white:hover { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.07); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--grayе);
+      padding: 32px 0;
+    }
+    .footer-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo { font-size: 16px; font-weight: 700; }
+    .footer-logo span { color: var(--accent); }
+    footer p { font-size: 13px; color: var(--gray9); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 13px; color: var(--gray6); transition: color .15s; }
+    .footer-links a:hover { color: var(--black); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { opacity: 0; animation: fadeUp .5s ease forwards; }
+    .fade-up-1 { animation-delay: .1s; }
+    .fade-up-2 { animation-delay: .2s; }
+    .fade-up-3 { animation-delay: .3s; }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+      section { padding: 64px 0; }
+      #hero { padding: 80px 0 60px; }
+      .nav-links { display: none; }
+      .hero-title { font-size: 2rem; }
+      .hero-sub { font-size: 16px; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="container nav-inner">
+    <div class="logo">Sale<span>on</span></div>
+    <div class="nav-links">
+      <a href="#pain">Зачем</a>
+      <a href="#how">Как работает</a>
+      <a href="#features">Возможности</a>
+      <a href="#pricing">Цены</a>
+    </div>
+    <div class="nav-cta">
+      <a href="https://t.me/bo_mirash" target="_blank" class="btn btn-primary">Написать нам</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-badge fade-up">ИИ-агент продаж нового поколения</div>
+    <h1 class="hero-title fade-up fade-up-1">
+      Ваш лучший менеджер<br><em>работает 24/7.</em><br>И он не человек.
+    </h1>
+    <p class="hero-sub fade-up fade-up-2">
+      Не очередной чат-бот. ИИ-агент, который квалифицирует лиды, отрабатывает возражения и закрывает сделки — пока ваша команда спит.
+    </p>
+    <div class="hero-btns fade-up fade-up-3">
+      <a href="#demo" class="btn btn-primary">Попробовать демо →</a>
+      <a href="https://t.me/bo_mirash" target="_blank" class="btn btn-ghost">Обсудить проект</a>
+    </div>
+    <p class="hero-note fade-up">Настройка за 1 день · Без кода · Уже работает у бизнесов в РФ и СНГ</p>
+  </div>
+</section>
+
+<!-- ── Logos ── -->
+<div id="logos">
+  <div class="container">
+    <p class="logos-label">Подходит для</p>
+    <div class="logos-row">
+      <span>Ногтевые студии</span>
+      <span>Барбершопы</span>
+      <span>Фитнес-клубы</span>
+      <span>Стоматологии</span>
+      <span>Недвижимость</span>
+      <span>EdTech</span>
+      <span>Любой SMB</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Pain ── -->
+<section id="pain">
+  <div class="container">
+    <p class="section-label">Почему это важно</p>
+    <h2 class="section-title">Вы теряете клиентов<br>каждый день. Вот как.</h2>
+    <p class="section-sub">Каждое пропущенное сообщение — это потерянная выручка. Агент решает это раз и навсегда.</p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon">🌙</div>
+        <h3>Пишут ночью — уходят к конкурентам</h3>
+        <p>Клиент написал в 23:00, вы ответили в 9:00 — он уже записался в другое место. Агент отвечает за 2 секунды в любое время.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">📱</div>
+        <h3>Менеджер занят — заявка висит</h3>
+        <p>Пока ваш сотрудник ведёт одного клиента, три других ждут ответа. Агент обрабатывает все диалоги одновременно.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">🔁</div>
+        <h3>Одни и те же вопросы по 50 раз</h3>
+        <p>«Сколько стоит?», «Есть ли свободные окна?», «Как добраться?» — агент отвечает мгновенно, без участия команды.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ── -->
+<section id="how">
+  <div class="container">
+    <p class="section-label">Как это работает</p>
+    <h2 class="section-title">Четыре шага до<br>бесконечных продаж.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Обучите агента</h3>
+        <p>Загрузите прайс, описание услуг или просто дайте ссылку на сайт. Агент изучит всё сам.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Подключите каналы</h3>
+        <p>Telegram, WhatsApp или веб-виджет — агент выходит в эфир за один день.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Продавайте</h3>
+        <p>Агент квалифицирует лиды, отрабатывает возражения, записывает клиентов. Без вашего участия.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3>Следите за результатом</h3>
+        <p>Видите каждый диалог и конверсию. Подключайтесь когда хотите — или просто дайте агенту работать.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="container">
+    <p class="section-label">Возможности</p>
+    <h2 class="section-title">Всё, что нужно<br>для продаж.</h2>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <h3>Мгновенный ответ 24/7</h3>
+        <p>Отвечает за 2 секунды в любое время суток. Ни один лид не остаётся без внимания.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎯</div>
+        <h3>Квалификация лидов</h3>
+        <p>Определяет горячих, тёплых и холодных лидов. Горячих — сразу передаёт менеджеру.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📚</div>
+        <h3>База знаний</h3>
+        <p>Загрузите прайс, FAQ, описание услуг. Агент отвечает точно по вашим данным — без галлюцинаций.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <h3>Аналитика диалогов</h3>
+        <p>Конверсия, типичные вопросы, слабые места в скрипте — всё в одном дашборде.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔌</div>
+        <h3>Telegram и WhatsApp</h3>
+        <p>Работает там, где ваши клиенты. Подключение за 10 минут — никаких технических знаний.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🤝</div>
+        <h3>Плавная передача менеджеру</h3>
+        <p>Если клиент хочет живого человека — агент мгновенно уведомляет вас и передаёт контекст.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Demo ── -->
+<section id="demo">
+  <div class="container">
+    <p class="section-label">Живое демо</p>
+    <h2 class="section-title">Не верите? Попробуйте сами.</h2>
+    <p class="section-sub" style="margin: 14px auto 0; color: var(--grayb);">Вот как агент общается с клиентом ногтевой студии. Напишите ему прямо сейчас.</p>
+    <div class="demo-box">
+      <div class="demo-chat">
+        <div class="bubble bubble-bot">👋 Добрый день! Я Алина, администратор студии. Помогу записаться на маникюр или педикюр. Чем могу помочь?</div>
+        <div class="bubble bubble-user">Сколько стоит маникюр?</div>
+        <div class="bubble bubble-bot">Маникюр с покрытием гель-лак — от 2 000 ₽, классический — от 1 200 ₽. Есть свободные окна уже на завтра 😊 Записать вас?</div>
+        <div class="bubble bubble-user">Да, на завтра в 14:00</div>
+        <div class="bubble bubble-bot">Отлично! Записала на завтра в 14:00. Напомню за час. Есть ещё вопросы? ✅</div>
+      </div>
+      <div class="demo-btn-wrap">
+        <a href="https://bot-nogti-salon.streamlit.app/" target="_blank" class="btn-demo">
+          Открыть живое демо →
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Pricing ── -->
+<section id="pricing">
+  <div class="container">
+    <p class="section-label">Цены</p>
+    <h2 class="section-title">Прозрачно. Без сюрпризов.</h2>
+    <p class="pricing-note">Стартовые цены для 1 500 диалогов/мес. Стоимость масштабируется с объёмом.</p>
+    <div class="pricing-grid">
+
+      <!-- Старт -->
+      <div class="plan">
+        <p class="plan-name">Старт</p>
+        <div class="plan-price">9 900 <span>₽/мес</span></div>
+        <p class="plan-volume">до 1 500 диалогов/мес</p>
+        <p class="plan-desc">Для бизнеса, который только начинает автоматизировать продажи.</p>
+        <hr class="plan-divider" />
+        <ul class="plan-features">
+          <li>1 мессенджер (Telegram или WhatsApp)</li>
+          <li>База знаний и мониторинг</li>
+          <li>Базовая аналитика диалогов</li>
+          <li>График работы (рабочие часы)</li>
+          <li>Техническая поддержка</li>
+          <li class="dim">CRM-интеграции</li>
+          <li class="dim">Follow-up и нутринг</li>
+        </ul>
+        <a href="https://t.me/bo_mirash" target="_blank" class="btn btn-ghost plan-btn">Начать</a>
+        <p class="plan-setup">+ 5 000 ₽ разовая настройка</p>
+      </div>
+
+      <!-- Бизнес -->
+      <div class="plan popular">
+        <div class="popular-badge">Популярный</div>
+        <p class="plan-name">Бизнес</p>
+        <div class="plan-price">14 900 <span>₽/мес</span></div>
+        <p class="plan-volume">до 1 500 диалогов/мес</p>
+        <p class="plan-desc">Для растущих команд, которые продают в нескольких каналах.</p>
+        <hr class="plan-divider" />
+        <ul class="plan-features">
+          <li>Всё из тарифа Старт</li>
+          <li>3 мессенджера (Telegram + WhatsApp + др.)</li>
+          <li>Follow-up и нутринг лидов</li>
+          <li>Google Календарь — запись на приём</li>
+          <li>Расширенная аналитика и отчёты</li>
+          <li>Приоритетная поддержка</li>
+          <li class="dim">Кастомные API-интеграции</li>
+        </ul>
+        <a href="https://t.me/bo_mirash" target="_blank" class="btn btn-primary plan-btn">Начать</a>
+        <p class="plan-setup">+ 5 000 ₽ разовая настройка</p>
+      </div>
+
+      <!-- Про -->
+      <div class="plan">
+        <p class="plan-name">Про</p>
+        <div class="plan-price">24 900 <span>₽/мес</span></div>
+        <p class="plan-volume">безлимит диалогов</p>
+        <p class="plan-desc">Для компаний с высоким объёмом и нестандартными задачами.</p>
+        <hr class="plan-divider" />
+        <ul class="plan-features">
+          <li>Всё из тарифа Бизнес</li>
+          <li>Безлимит каналов</li>
+          <li>Кастомный скрипт и персона агента</li>
+          <li>CRM-интеграции (amoCRM, Битрикс24)</li>
+          <li>Ранний доступ к новым функциям</li>
+          <li>Выделенный менеджер</li>
+        </ul>
+        <a href="https://t.me/bo_mirash" target="_blank" class="btn btn-ghost plan-btn">Связаться</a>
+        <p class="plan-setup">+ 5 000 ₽ разовая настройка</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Final CTA ── -->
+<section id="cta">
+  <div class="container">
+    <h2 class="section-title">Готовы продавать<br>без остановки?</h2>
+    <p class="section-sub">Настроим агента под ваш бизнес за 1 день. Без кода, без технических знаний. Просто напишите нам.</p>
+    <div class="cta-btns">
+      <a href="https://t.me/bo_mirash" target="_blank" class="btn btn-white">💬 Написать в Telegram</a>
+      <a href="#demo" class="btn btn-outline-white">Посмотреть демо</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container footer-inner">
+    <div class="footer-logo">Sale<span>on</span></div>
+    <p>© 2026 Saleon. Сделано в Казахстане 🇰🇿</p>
+    <div class="footer-links">
+      <a href="https://t.me/bo_mirash" target="_blank">Telegram</a>
+      <a href="#pricing">Цены</a>
+      <a href="#demo">Демо</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
